@@ -22,8 +22,10 @@ Base = automap_base()
 Base.prepare(engine, reflect=True)
 
 # Save references to each table
-Measurement = Base.classes.measurement
-Station = Base.classes.station
+income = Base.classes.income
+housing = Base.classes.housing
+transit_type = Base.classes.transit_type
+commute_time = Base.classes.commute_time
 
 # Create our session (link) from Python to the DB
 session = Session(engine)
@@ -40,33 +42,33 @@ app = Flask(__name__)
 @app.route("/")
 def welcome():
     return (
-        f"Welcome to the NYC Commuter Data API!<br/>"
+        f"Welcome to the NYC Commuter Data (2011) API!<br/>"
         f"Available Routes:<br/>"
-        f"/api/v1.0/precipitation<br/>"
-        f"/api/v1.0/stations<br/>"
-        f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/temp/start/end"
+        f"/api/v1.0/income<br/>"
+        f"/api/v1.0/housing<br/>"
+        f"/api/v1.0/transit_type<br/>"
+        f"/api/v1.0/temp/commute_time<br/>"
     )
 
 
-@app.route("/api/v1.0/precipitation")
-def precipitation():
-    """Return the precipitation data for the last year"""
+@app.route("/api/v1.0/income")
+def income():
+    """Return the median income of New York City zip codes."""
     # Calculate the date 1 year ago from last date in database
     prev_year = dt.date(2017, 8, 23) - dt.timedelta(days=365)
 
     # Query for the date and precipitation for the last year
-    precipitation = session.query(Measurement.date, Measurement.prcp).\
+    income = session.query(income.date, Measurement.prcp).\
         filter(Measurement.date >= prev_year).all()
 
     # Dict with date as the key and prcp as the value
-    precip = {date: prcp for date, prcp in precipitation}
-    return jsonify(precip)
+    income = {date: prcp for date, prcp in precipitation}
+    return jsonify(income)
 
 
-@app.route("/api/v1.0/stations")
+@app.route("/api/v1.0/housing")
 def stations():
-    """Return a list of stations."""
+    """Return housing information of New York City zip codes."""
     results = session.query(Station.station).all()
 
     # Unravel results into a 1D array and convert to a list
@@ -74,9 +76,9 @@ def stations():
     return jsonify(stations)
 
 
-@app.route("/api/v1.0/tobs")
+@app.route("/api/v1.0/transit_type")
 def temp_monthly():
-    """Return the temperature observations (tobs) for previous year."""
+    """Return the type of transportation used to commute to New York City."""
     # Calculate the date 1 year ago from last date in database
     prev_year = dt.date(2017, 8, 23) - dt.timedelta(days=365)
 
@@ -92,10 +94,9 @@ def temp_monthly():
     return jsonify(temps)
 
 
-@app.route("/api/v1.0/temp/<start>")
-@app.route("/api/v1.0/temp/<start>/<end>")
+@app.route("/api/v1.0/commute_time")
 def stats(start=None, end=None):
-    """Return TMIN, TAVG, TMAX."""
+    """Return the average commute time of New York zip codes."""
 
     # Select statement
     sel = [func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)]
