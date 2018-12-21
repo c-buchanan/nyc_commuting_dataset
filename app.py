@@ -13,7 +13,7 @@ from flask import Flask, jsonify, render_template
 #################################################
 # Database Setup
 #################################################
-engine = create_engine("sqlite:///hawaii.sqlite")
+engine = create_engine("sqlite:///nyc_commuter.sqlite")
 port = int(os.environ.get("PORT", 5000))
 
 # reflect an existing database into a new model
@@ -22,13 +22,15 @@ Base = automap_base()
 Base.prepare(engine, reflect=True)
 
 # Save references to each table
-income = Base.classes.income
-housing = Base.classes.housing
-transit_type = Base.classes.transit_type
-commute_time = Base.classes.commute_time
+median_income = Base.classes.income
+housing_table = Base.classes.housing
+transit_type_table = Base.classes.transit_type
+commute_time_table = Base.classes.commute_time
 
 # Create our session (link) from Python to the DB
 session = Session(engine)
+
+Base.metadata.create_all(engine)
 
 #################################################
 # Flask Setup
@@ -54,14 +56,11 @@ def welcome():
 @app.route("/api/v1.0/income")
 def income():
     """Return the median income of New York City zip codes."""
-    # Calculate the date 1 year ago from last date in database
-    prev_year = dt.date(2017, 8, 23) - dt.timedelta(days=365)
 
     # Query for the date and precipitation for the last year
-    income = session.query(income.date, Measurement.prcp).\
-        filter(Measurement.date >= prev_year).all()
 
-    # Dict with date as the key and prcp as the value
+
+    # Dict with zip code as the key and prcp as the value
     income = {date: prcp for date, prcp in precipitation}
     return jsonify(income)
 
